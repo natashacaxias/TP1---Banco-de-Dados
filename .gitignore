@@ -1,0 +1,9 @@
+# arquivos temporários
+__pycache__/
+*.pyc
+
+# banco de dados
+pgdata/
+
+# arquivos de sistema
+.DS_Store
