@@ -33,6 +33,20 @@ CREATE TABLE Similar (
     CONSTRAINT par_unico UNIQUE (id_produto, asin_similar) -- Evita repetições de pares ordenados
 );
 
+<<<<<<< HEAD
+CREATE TABLE Categoria_Hierarquia (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_categoria INT NOT NULL,
+    id_categoria_pai INT NOT NULL,
+
+    FOREIGN KEY (id_categoria) REFERENCES Categoria(id);
+    FOREIGN KEY (id_categoria) REFERENCES Categoria(id);
+
+    CONSTRAINT uk_categoria_hierarquia UNIQUE (id_categoria, id_categoria_pai), -- Evita repetições de pares ordenados
+    CONSTRAINT chk_diferentes CHECK (id_categoria != id_categoria_pai) -- evita pai se si mesmo
+);
+=======
+>>>>>>> e7ef5c2defd7a3d958f10ce98ed81004e546e07b
 
 CREATE TABLE Categoria_Produto (
     id INT AUTO_INCREMENT PRIMARY KEY,
