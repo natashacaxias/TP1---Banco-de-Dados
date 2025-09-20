@@ -1,5 +1,4 @@
-
-# Arquivo de dados
+# Arquivo de entrada
 
 O arquivo `amazon-meta.txt` pode ser baixado diretamente do site oficial do SNAP (Stanford):
 
