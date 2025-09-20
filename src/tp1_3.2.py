@@ -1,10 +1,12 @@
 import gzip
 import sqlite3
 import re, os
+from pathlib import Path
 
 #  padrões 
 rx_id = re.compile(r'^\s*Id:\s*(\d+)', re.IGNORECASE)
 rx_asin = re.compile(r'^\s*ASIN:\s*(\S+)', re.IGNORECASE)
+rx_status = re.compile(r'^\s*discontinued\s+product\s*$', re.IGNORECASE)
 rx_title = re.compile(r'^\s*title:\s*(.*)', re.IGNORECASE)
 rx_group = re.compile(r'^\s*group:\s*(.*)', re.IGNORECASE)
 rx_salesrank = re.compile(r'^\s*salesrank:\s*(\d+)', re.IGNORECASE)
@@ -12,7 +14,7 @@ rx_similar = re.compile(r'^\s*similar:\s*(?:\d+\s+)?(.*)', re.IGNORECASE)
 rx_categories = re.compile(r'^\s*categories:\s*(.*)', re.IGNORECASE)
 rx_reviews_summary = re.compile(r'^\s*reviews:\s*(.*)', re.IGNORECASE)
 rx_review_line = re.compile(
-    r'^\s*(\d{4}-\d{1,2}-\d{1,2})\s+cutomer:\s*(\S+)\s+rating:\s*(\d+)\s+votes:\s*(\d+)\s+helpful:\s*(\d+)',
+    r'^\s*(\d{4}-\d{1,2}-\d{1,2})\s+customer:\s*(\S+)\s+rating:\s*(\d+)\s+votes:\s*(\d+)\s+helpful:\s*(\d+)',
     re.IGNORECASE
 )
 
@@ -98,7 +100,7 @@ def parse_amazon_meta_fast(filepath, esquema, dbpath="amazon_fast.db", limite=No
         cur = conn.cursor()
         if buf_produto:
             cur.executemany("""
-                INSERT OR REPLACE INTO Produto (id, asin, titulo, grupo, ranking_vendas)
+                INSERT OR REPLACE INTO Produto (id, asin, titulo, grupo, ranking_vendas, ativo)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, buf_produto)
             buf_produto.clear()
@@ -138,6 +140,7 @@ def parse_amazon_meta_fast(filepath, esquema, dbpath="amazon_fast.db", limite=No
                         produto.get('titulo'),
                         produto.get('grupo'),
                         produto.get('salesrank'),
+                        produto.get('ativo')
                     ))
                     # similars
                     for s in produto['similar_list']:
@@ -182,6 +185,7 @@ def parse_amazon_meta_fast(filepath, esquema, dbpath="amazon_fast.db", limite=No
                     'asin': None,
                     'titulo': None,
                     'grupo': None,
+                    'ativo': 1,
                     'salesrank': None,
                     'similar_list': [],
                     'categories_raw': [],
@@ -198,6 +202,10 @@ def parse_amazon_meta_fast(filepath, esquema, dbpath="amazon_fast.db", limite=No
             if m:
                 produto['asin'] = m.group(1).strip()
                 continue
+
+            m = rx_status.match(linha)
+            if m:
+                produto['ativo'] = 0
 
             m = rx_title.match(linha)
             if m:
@@ -259,6 +267,7 @@ def parse_amazon_meta_fast(filepath, esquema, dbpath="amazon_fast.db", limite=No
                 produto.get('titulo'),
                 produto.get('grupo'),
                 produto.get('salesrank'),
+                produto.get('ativo')
             ))
             for s in produto['similar_list']:
                 if s and produto.get('asin') and s != produto.get('asin'):
@@ -293,9 +302,13 @@ def parse_amazon_meta_fast(filepath, esquema, dbpath="amazon_fast.db", limite=No
 
 # Execução 
 if __name__ == "__main__":
-    INPUT_GZ = "mini_teste.tar.gz"
-    DB_PATH = "amazon_fast.db"
-    ESQUEMA = "sql/schema.sql"
+
+    BASE_DIR = Path(__file__).parent.parent
+
+    INPUT_GZ = BASE_DIR / "data" / "mini_teste.tar.gz"
+    DB_PATH = BASE_DIR / "data" / "amazon_fast.db"
+    ESQUEMA = BASE_DIR / "sql" /  "schema.sql"
     LIMITE = None     # definir para testes rápidos
     FLUSH_EVERY = 1000
+
     parse_amazon_meta_fast(INPUT_GZ, ESQUEMA, dbpath=DB_PATH, limite=LIMITE, flush_every=FLUSH_EVERY)

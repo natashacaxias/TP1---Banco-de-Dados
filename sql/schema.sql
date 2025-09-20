@@ -4,7 +4,7 @@ CREATE TABLE Produto (
     titulo VARCHAR(255),
     grupo varchar(50),
     ranking_vendas INT,
-    --status TINYINT(1) DEFAULT 1 -- '1=ativo, 0=descontinuado'
+    ativo INT(1) DEFAULT 1 -- '1=ativo, 0=descontinuado'
 );
 
 CREATE TABLE Categoria (
