@@ -1,13 +1,11 @@
-import gzip, psycopg2, sys, argparse
+import gzip, psycopg2, argparse
 from pathlib import Path
 from psycopg2 import sql
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 categorias_pai = {}
 categorias_nome = {}
 similares = set([])
 BASE_DIR = Path(__file__).parent.parent
-
 
 def conectar_postgree():
 

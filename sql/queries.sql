@@ -1,4 +1,4 @@
--- Q1: Top 5 comentários mais úteis e com maior/menor avaliação
+-- q1: Top 5 comentários mais úteis e com maior/menor avaliação
 WITH ordenado AS (
   SELECT 
     a.id_usuario, a.classificacao, a.votos, a.util, a.data,
@@ -14,7 +14,7 @@ WHERE rank_pos <= 5 OR rank_neg <= 5
 ORDER BY util DESC, classificacao DESC;
 
 
--- Q2: Produtos similares com melhor ranking de vendas
+-- q2: Produtos similares com melhor ranking de vendas
 SELECT ps.asin_similar, p2.titulo, p2.ranking_vendas
 FROM Produto_Similar ps
 JOIN Produto p1 ON p1.id = ps.id_produto
@@ -24,7 +24,7 @@ WHERE p1.asin = 'INSIRA_ASIN_AQUI'
 ORDER BY p2.ranking_vendas ASC;
 
 
--- Q3: Evolução diária das médias de avaliação
+-- q3: Evolução diária das médias de avaliação
 SELECT a.data, AVG(a.classificacao) AS media_diaria
 FROM Avaliacao a
 JOIN Produto p ON p.id = a.id_produto
@@ -33,7 +33,7 @@ GROUP BY a.data
 ORDER BY a.data;
 
 
--- Q4: Top 10 produtos líderes de venda por grupo
+-- q4: Top 10 produtos líderes de venda por grupo
 SELECT grupo, asin, titulo, ranking_vendas
 FROM (
   SELECT p.*,
@@ -45,7 +45,7 @@ WHERE pos <= 10
 ORDER BY grupo, pos;
 
 
--- Q5: Top 10 produtos com maior média de avaliações úteis positivas
+-- q5: Top 10 produtos com maior média de avaliações úteis positivas
 SELECT p.asin, p.titulo,
        AVG(a.util::float / NULLIF(a.votos, 0)) AS media_util
 FROM Avaliacao a
@@ -55,7 +55,7 @@ ORDER BY media_util DESC NULLS LAST
 LIMIT 10;
 
 
--- Q6: Top 5 categorias com maior média de avaliações úteis por produto
+-- q6: Top 5 categorias com maior média de avaliações úteis por produto
 SELECT c.nome,
        AVG(a.util::float / NULLIF(a.votos, 0)) AS media_util
 FROM Avaliacao a
@@ -67,7 +67,7 @@ ORDER BY media_util DESC NULLS LAST
 LIMIT 5;
 
 
--- Q7: Top 10 clientes que mais comentaram por grupo de produto
+-- q7: Top 10 clientes que mais comentaram por grupo de produto
 SELECT a.id_usuario, p.grupo, COUNT(*) AS total_comentarios
 FROM Avaliacao a
 JOIN Produto p ON p.id = a.id_produto
