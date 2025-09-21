@@ -2,21 +2,21 @@ CREATE TABLE IF NOT EXISTS Produto (
     id INT PRIMARY KEY,
     asin VARCHAR(20) UNIQUE NOT NULL,
     titulo VARCHAR(255),
-    grupo varchar(50),
+    grupo VARCHAR(50),
     ranking_vendas INT,
     ativo BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS Categoria (
     id INT PRIMARY KEY,
-    nome varchar(50) NOT NULL UNIQUE
+    nome varchar(50) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Avaliacao (
     id SERIAL PRIMARY KEY,
     id_produto INT NOT NULL,
     data DATE NOT NULL,
-    id_usuario INT NOT NULL,
+    id_usuario VARCHAR(50) NOT NULL,
     classificacao INT CHECK (classificacao BETWEEN 1 AND 5),
     votos INT DEFAULT 0,
     util INT DEFAULT 0,

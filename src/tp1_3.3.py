@@ -47,9 +47,9 @@ def executar_consultas(conn, path):
             if not query: # pula linha em branco
                 continue 
 
-            if query.upper().startswith('-- Q'): # pega nome da questão
-                consulta_nome = query
-                continue
+            l, sep, query = query.partition("\n")
+            if l.startswith('-- Q'):
+                consulta_nome = l
 
             # executa consulta
             cursor.execute(query)
