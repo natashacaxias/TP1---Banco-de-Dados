@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:15
@@ -23,9 +21,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
-      - ./data:/data
-      - ./out:/app/out
+      - .:/app
     working_dir: /app
     environment:
       PYTHONUNBUFFERED: "1"

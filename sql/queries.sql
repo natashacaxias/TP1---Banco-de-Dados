@@ -1,0 +1,2 @@
+-- Q1_TOP5
+SELECT * FROM Produto
