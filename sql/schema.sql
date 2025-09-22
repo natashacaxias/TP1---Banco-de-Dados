@@ -1,33 +1,33 @@
 CREATE TABLE IF NOT EXISTS Produto (
-    id INT PRIMARY KEY,
-    asin VARCHAR(20) UNIQUE NOT NULL,
-    titulo VARCHAR(255),
-    grupo VARCHAR(50),
-    ranking_vendas INT,
+    id BIGINT PRIMARY KEY,
+    asin TEXT UNIQUE NOT NULL,
+    titulo TEXT,
+    grupo TEXT,
+    ranking_vendas BIGINT,
     ativo BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS Categoria (
-    id INT PRIMARY KEY,
-    nome varchar(50) NOT NULL
+    id BIGINT PRIMARY KEY,
+    nome TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Avaliacao (
     id SERIAL PRIMARY KEY,
-    id_produto INT NOT NULL,
+    id_produto BIGINT NOT NULL,
     data DATE NOT NULL,
-    id_usuario VARCHAR(50) NOT NULL,
-    classificacao INT CHECK (classificacao BETWEEN 1 AND 5),
-    votos INT DEFAULT 0,
-    util INT DEFAULT 0,
+    id_usuario TEXT NOT NULL,
+    classificacao BIGINT CHECK (classificacao BETWEEN 1 AND 5),
+    votos BIGINT DEFAULT 0,
+    util BIGINT DEFAULT 0,
 
     FOREIGN KEY (id_produto) REFERENCES Produto(id)
 );
 
 CREATE TABLE IF NOT EXISTS Produto_Similar (
     id SERIAL PRIMARY KEY,
-    id_produto INT NOT NULL,
-    asin_similar VARCHAR(20) NOT NULL,
+    id_produto BIGINT NOT NULL,
+    asin_similar TEXT NOT NULL,
 
     FOREIGN KEY (id_produto) REFERENCES Produto(id),
     FOREIGN KEY (asin_similar) REFERENCES Produto(asin),
@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS Produto_Similar (
 
 CREATE TABLE IF NOT EXISTS Categoria_Hierarquia (
     id SERIAL PRIMARY KEY,
-    id_categoria INT NOT NULL,
-    id_categoria_pai INT NOT NULL,
+    id_categoria BIGINT NOT NULL,
+    id_categoria_pai BIGINT NOT NULL,
 
     FOREIGN KEY (id_categoria) REFERENCES Categoria(id),
     FOREIGN KEY (id_categoria_pai) REFERENCES Categoria(id),
@@ -48,10 +48,32 @@ CREATE TABLE IF NOT EXISTS Categoria_Hierarquia (
 
 CREATE TABLE IF NOT EXISTS Categoria_Produto (
     id SERIAL PRIMARY KEY,
-    id_produto INT NOT NULL,
-    id_categoria INT NOT NULL,
+    id_produto BIGINT NOT NULL,
+    id_categoria BIGINT NOT NULL,
 
     FOREIGN KEY (id_produto) REFERENCES Produto(id),
     FOREIGN KEY (id_categoria) REFERENCES Categoria(id),
     CONSTRAINT par_unico_categoria UNIQUE (id_produto, id_categoria) -- Evita repetições de pares
 );
+
+-- Índices para Produto
+CREATE INDEX IF NOT EXISTS idx_produto_asin ON Produto(asin);
+CREATE INDEX IF NOT EXISTS idx_produto_grupo ON Produto(grupo);
+CREATE INDEX IF NOT EXISTS idx_produto_ranking ON Produto(ranking_vendas);
+CREATE INDEX IF NOT EXISTS idx_produto_ativo ON Produto(ativo);
+
+-- Índices para Avaliacao
+CREATE INDEX IF NOT EXISTS idx_avaliacao_produto ON Avaliacao(id_produto);
+CREATE INDEX IF NOT EXISTS idx_avaliacao_data ON Avaliacao(data);
+CREATE INDEX IF NOT EXISTS idx_avaliacao_classificacao ON Avaliacao(classificacao);
+CREATE INDEX IF NOT EXISTS idx_avaliacao_usuario ON Avaliacao(id_usuario);
+
+-- Índices para Categoria_Produto
+CREATE INDEX IF NOT EXISTS idx_categoria_produto_categoria ON Categoria_Produto(id_categoria);
+CREATE INDEX IF NOT EXISTS idx_categoria_produto_produto ON Categoria_Produto(id_produto);
+
+-- Índices para Produto_Similar
+CREATE INDEX IF NOT EXISTS idx_similar_asin ON Produto_Similar(asin_similar);
+
+-- Índices para Categoria_Hierarquia
+CREATE INDEX IF NOT EXISTS idx_hierarquia_pai ON Categoria_Hierarquia(id_categoria_pai);
