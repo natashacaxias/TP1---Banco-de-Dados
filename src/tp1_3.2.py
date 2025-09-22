@@ -122,7 +122,7 @@ def processa_produto(linhas, produtos_batch, reviews_batch, categoria_batch,cate
             if len(o)!=2:
                 continue
             nome, cid = o
-            cid = cid[:-1]
+            cid = int(cid[:-1])
             categoria_batch.append((nome[:255],cid))
             if j != 0:
                 categorias_pai[cid] = prev_cid
@@ -142,14 +142,13 @@ def processa_produto(linhas, produtos_batch, reviews_batch, categoria_batch,cate
     aux_i+=1
     for i in range(aux_i, aux_i+downloaded):
         aux = l[i].strip().split()
-        #print(aux)
         reviews_batch.append((
-            atributos["id"],
-            aux[0],
-            aux[2],
-            aux[4],
-            aux[6],
-            aux[8],
+            atributos["id"], # id_produto
+            aux[0],          # data
+            aux[2],          # customer
+            int(aux[4]),     # rating
+            int(aux[6]),     # votes
+            int(aux[8]),     # helpful
         ))
 
     # produtos batch
@@ -178,7 +177,9 @@ def insere_lotes(cur, produtos_batch, reviews_batch, categoria_batch, categoria_
     if reviews_batch:
         execute_values(cur,
             """INSERT INTO Avaliacao (id_produto, data, id_usuario, classificacao, votos, util)
-               VALUES %s""", reviews_batch)
+            SELECT r.id_produto, r.data::DATE, r.id_usuario, r.classificacao::BIGINT, r.votos::BIGINT, r.util::BIGINT
+            FROM (VALUES %s) AS r(id_produto, data, id_usuario, classificacao, votos, util)
+            WHERE EXISTS (SELECT 1 FROM Produto p WHERE p.id = r.id_produto)""", reviews_batch)
     if categoria_batch:
         execute_values(cur,
             """INSERT INTO Categoria (nome, id)
@@ -195,11 +196,8 @@ def inserir_similares(conn):
             """INSERT INTO Produto_Similar (id_produto, asin_similar)
             SELECT s.id_produto, s.asin_similar
             FROM (VALUES %s) AS s(id_produto, asin_similar)
-            WHERE EXISTS (
-                SELECT 1 FROM Produto p1 WHERE p1.id = s.id_produto
-            ) AND EXISTS (
-                SELECT 1 FROM Produto p2 WHERE p2.asin = s.asin_similar
-            )
+            WHERE EXISTS (SELECT 1 FROM Produto p1 WHERE p1.id = s.id_produto)
+              AND EXISTS (SELECT 1 FROM Produto p2 WHERE p2.asin = s.asin_similar)
             ON CONFLICT (id_produto, asin_similar) DO NOTHING""", list(similares))
     conn.commit()
 
@@ -209,7 +207,12 @@ def inserir_hierarquia(conn):
     if categorias_pai:
         execute_values(cur,
             """INSERT INTO Categoria_Hierarquia (id_categoria, id_categoria_pai)
-               VALUES %s ON CONFLICT DO NOTHING""", list(categorias_pai.items()))
+            SELECT h.id_categoria, h.id_categoria_pai
+            FROM (VALUES %s) AS h(id_categoria, id_categoria_pai)
+            WHERE EXISTS (SELECT 1 FROM Categoria c1 WHERE c1.id = h.id_categoria)
+              AND EXISTS (SELECT 1 FROM Categoria c2 WHERE c2.id = h.id_categoria_pai)
+              AND h.id_categoria != h.id_categoria_pai
+            ON CONFLICT (id_categoria, id_categoria_pai) DO NOTHING""", list(categorias_pai.items()))
     conn.commit()
 
 
