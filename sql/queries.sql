@@ -1,4 +1,4 @@
--- q1: Top 5 comentários mais úteis e com maior/menor avaliação
+-- q1: Top 5 comentários mais úteis e com maior avaliação
 WITH ordenado AS (
   SELECT 
     a.id_custumer, a.rating, a.votes, a.helpful, a.data,
@@ -10,7 +10,22 @@ WITH ordenado AS (
 )
 SELECT id_custumer, rating, votes, helpful, data
 FROM ordenado
-WHERE rank_pos <= 5 OR rank_neg <= 5
+WHERE rank_pos <= 5 
+ORDER BY helpful DESC, rating DESC;
+
+-- q1: Top 5 comentários mais úteis e com menor avaliação
+WITH ordenado AS (
+  SELECT 
+    a.id_custumer, a.rating, a.votes, a.helpful, a.data,
+    RANK() OVER (ORDER BY a.helpful DESC, a.rating DESC) AS rank_pos,
+    RANK() OVER (ORDER BY a.helpful DESC, a.rating ASC) AS rank_neg
+  FROM Review a
+  JOIN Product p ON p.id = a.id_product
+  WHERE p.asin = '1559362022'
+)
+SELECT id_custumer, rating, votes, helpful, data
+FROM ordenado
+WHERE rank_neg <= 5
 ORDER BY helpful DESC, rating DESC;
 
 -- q2: Produtos similares com melhor ranking de vendas
@@ -69,3 +84,4 @@ GROUP BY a.id_custumer, p.grupo
 ORDER BY total_comentarios DESC
 
 LIMIT 10;
+
