@@ -6,7 +6,7 @@ WITH ordenado AS (
     RANK() OVER (ORDER BY a.helpful DESC, a.rating ASC) AS rank_neg
   FROM Review a
   JOIN Product p ON p.id = a.id_product
-  WHERE p.asin = 'INSIRA_ASIN_AQUI'
+  WHERE p.asin = '1559362022'
 )
 SELECT id_custumer, rating, votes, helpful, data
 FROM ordenado
@@ -18,7 +18,7 @@ SELECT ps.asin_similar, p2.title, p2.salesrank
 FROM Product_Similar ps
 JOIN Product p1 ON p1.id = ps.id_product
 JOIN Product p2 ON p2.asin = ps.asin_similar
-WHERE p1.asin = 'INSIRA_ASIN_AQUI'
+WHERE p1.asin = '1559362022'
   AND p2.salesrank < p1.salesrank
 ORDER BY p2.salesrank ASC;
 
@@ -26,7 +26,7 @@ ORDER BY p2.salesrank ASC;
 SELECT a.data, AVG(a.rating) AS media_diaria
 FROM Review a
 JOIN Product p ON p.id = a.id_product
-WHERE p.asin = 'INSIRA_ASIN_AQUI'
+WHERE p.asin = '1559362022'
 GROUP BY a.data
 ORDER BY a.data;
 
@@ -67,4 +67,5 @@ FROM Review a
 JOIN Product p ON p.id = a.id_product
 GROUP BY a.id_custumer, p.grupo
 ORDER BY total_comentarios DESC
+
 LIMIT 10;
