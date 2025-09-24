@@ -62,7 +62,6 @@ def executar_consultas(conn, consultas):
                 
                 # Formatar a saída de forma bonita, igual ao PostgreSQL
                 stdout.write(("-" * 133) + "\n")
-                stdout.write(f"CONSULTA: {nome_arquivo[:-4]}\n")
                 stdout.write(f"Arquivo salvo: {nome_arquivo}\n")
                 stdout.write(f"Total de registros: {len(df)}\n")
                 stdout.write(("-" * 133) + "\n")
