@@ -1,79 +1,79 @@
-CREATE TABLE IF NOT EXISTS Produto (
-    id BIGINT PRIMARY KEY,
-    asin TEXT UNIQUE NOT NULL,
-    titulo TEXT,
+CREATE TABLE IF NOT EXISTS Product (
+    id INT PRIMARY KEY,
+    asin VARCHAR(20) UNIQUE NOT NULL,
+    title TEXT,
     grupo TEXT,
-    ranking_vendas BIGINT,
-    ativo BOOLEAN DEFAULT TRUE
+    salesrank INT,
+    active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS Categoria (
-    id BIGINT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS Category (
+    id INT PRIMARY KEY,
     nome TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS Avaliacao (
+CREATE TABLE IF NOT EXISTS Review (
     id SERIAL PRIMARY KEY,
-    id_produto BIGINT NOT NULL,
+    id_Product INT NOT NULL,
     data DATE NOT NULL,
-    id_usuario TEXT NOT NULL,
-    classificacao BIGINT CHECK (classificacao BETWEEN 1 AND 5),
-    votos BIGINT DEFAULT 0,
-    util BIGINT DEFAULT 0,
+    id_custumer VARCHAR(255) NOT NULL,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    votes INT DEFAULT 0,
+    helpful INT DEFAULT 0,
 
-    FOREIGN KEY (id_produto) REFERENCES Produto(id)
+    FOREIGN KEY (id_Product) REFERENCES Product(id)
 );
 
-CREATE TABLE IF NOT EXISTS Produto_Similar (
+CREATE TABLE IF NOT EXISTS Product_Similar (
     id SERIAL PRIMARY KEY,
-    id_produto BIGINT NOT NULL,
-    asin_similar TEXT NOT NULL,
+    id_Product INT NOT NULL,
+    asin_similar VARCHAR(20) NOT NULL,
 
-    FOREIGN KEY (id_produto) REFERENCES Produto(id),
-    FOREIGN KEY (asin_similar) REFERENCES Produto(asin),
-    CONSTRAINT par_unico_similar UNIQUE (id_produto, asin_similar) -- Evita repetições de pares ordenados
+    FOREIGN KEY (id_Product) REFERENCES Product(id),
+    FOREIGN KEY (asin_similar) REFERENCES Product(asin),
+    CONSTRAINT par_unico_similar UNIQUE (id_Product, asin_similar) -- Evita repetições de pares ordenados
 );
 
-CREATE TABLE IF NOT EXISTS Categoria_Hierarquia (
+CREATE TABLE IF NOT EXISTS Category_hierarchy (
     id SERIAL PRIMARY KEY,
-    id_categoria BIGINT NOT NULL,
-    id_categoria_pai BIGINT NOT NULL,
+    id_Category INT NOT NULL,
+    id_Category_pai INT NOT NULL,
 
-    FOREIGN KEY (id_categoria) REFERENCES Categoria(id),
-    FOREIGN KEY (id_categoria_pai) REFERENCES Categoria(id),
+    FOREIGN KEY (id_Category) REFERENCES Category(id),
+    FOREIGN KEY (id_Category_pai) REFERENCES Category(id),
 
-    CONSTRAINT uk_categoria_hierarquia UNIQUE (id_categoria, id_categoria_pai), -- Evita repetições de pares ordenados
-    CONSTRAINT chk_diferentes CHECK (id_categoria != id_categoria_pai) -- evita pai se si mesmo
+    CONSTRAINT uk_Category_hierarquia UNIQUE (id_Category, id_Category_pai), -- Evita repetições de pares ordenados
+    CONSTRAINT chk_diferentes CHECK (id_Category != id_Category_pai) -- evita pai se si mesmo
 );
 
-CREATE TABLE IF NOT EXISTS Categoria_Produto (
+CREATE TABLE IF NOT EXISTS Category_Product (
     id SERIAL PRIMARY KEY,
-    id_produto BIGINT NOT NULL,
-    id_categoria BIGINT NOT NULL,
+    id_Product INT NOT NULL,
+    id_Category INT NOT NULL,
 
-    FOREIGN KEY (id_produto) REFERENCES Produto(id),
-    FOREIGN KEY (id_categoria) REFERENCES Categoria(id),
-    CONSTRAINT par_unico_categoria UNIQUE (id_produto, id_categoria) -- Evita repetições de pares
+    FOREIGN KEY (id_Product) REFERENCES Product(id),
+    FOREIGN KEY (id_Category) REFERENCES Category(id),
+    CONSTRAINT par_unico_Category UNIQUE (id_Product, id_Category) -- Evita repetições de pares
 );
 
--- Índices para Produto
-CREATE INDEX IF NOT EXISTS idx_produto_asin ON Produto(asin);
-CREATE INDEX IF NOT EXISTS idx_produto_grupo ON Produto(grupo);
-CREATE INDEX IF NOT EXISTS idx_produto_ranking ON Produto(ranking_vendas);
-CREATE INDEX IF NOT EXISTS idx_produto_ativo ON Produto(ativo);
+-- Índices para Product
+CREATE INDEX IF NOT EXISTS idx_Product_asin ON Product(asin);
+CREATE INDEX IF NOT EXISTS idx_Product_group ON Product(grupo);
+CREATE INDEX IF NOT EXISTS idx_Product_ranking ON Product(salesrank);
+CREATE INDEX IF NOT EXISTS idx_Product_active ON Product(active);
 
--- Índices para Avaliacao
-CREATE INDEX IF NOT EXISTS idx_avaliacao_produto ON Avaliacao(id_produto);
-CREATE INDEX IF NOT EXISTS idx_avaliacao_data ON Avaliacao(data);
-CREATE INDEX IF NOT EXISTS idx_avaliacao_classificacao ON Avaliacao(classificacao);
-CREATE INDEX IF NOT EXISTS idx_avaliacao_usuario ON Avaliacao(id_usuario);
+-- Índices para Review
+CREATE INDEX IF NOT EXISTS idx_Review_Product ON Review(id_Product);
+CREATE INDEX IF NOT EXISTS idx_Review_data ON Review(data);
+CREATE INDEX IF NOT EXISTS idx_Review_rating ON Review(rating);
+CREATE INDEX IF NOT EXISTS idx_Review_usuario ON Review(id_custumer);
 
--- Índices para Categoria_Produto
-CREATE INDEX IF NOT EXISTS idx_categoria_produto_categoria ON Categoria_Produto(id_categoria);
-CREATE INDEX IF NOT EXISTS idx_categoria_produto_produto ON Categoria_Produto(id_produto);
+-- Índices para Category_Product
+CREATE INDEX IF NOT EXISTS idx_Category_Product_Category ON Category_Product(id_Category);
+CREATE INDEX IF NOT EXISTS idx_Category_Product_Product ON Category_Product(id_Product);
 
--- Índices para Produto_Similar
-CREATE INDEX IF NOT EXISTS idx_similar_asin ON Produto_Similar(asin_similar);
+-- Índices para Product_Similar
+CREATE INDEX IF NOT EXISTS idx_similar_asin ON Product_Similar(asin_similar);
 
--- Índices para Categoria_Hierarquia
-CREATE INDEX IF NOT EXISTS idx_hierarquia_pai ON Categoria_Hierarquia(id_categoria_pai);
+-- Índices para Category_Hierarquia
+CREATE INDEX IF NOT EXISTS idx_hierarquia_pai ON Category_hierarchy(id_Category_pai);

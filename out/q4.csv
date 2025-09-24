@@ -1,39 +1,39 @@
-grupo,asin,titulo,ranking_vendas
-Baby,0880881658,Baby'S Record Keeper And Memory Box,1017
-Book,3190115052,"Pingpong 2, workbook",-1
-Book,0679746277,PR BEST LAW SCHOOLS 1994,-1
-Book,9994673076,Philosophy of Education 1994: Proceedings of the 50th Annual Meeting of the Philosophy of Education Society,-1
+grupo,asin,title,salesrank
+Baby Product,0880881658,Baby'S Record Keeper And Memory Box,1017
+Book,0887441475,Treatment procedures in communicative disorders,-1
 Book,2950826652,Parfums d'orient,-1
-Book,0788172549,Implementation of the Indian Gaming Regulatory Act: Survey Report and Audit Report,-1
+Book,9502405552,Diseos Para Tarjetas Espaolas,-1
+Book,3190115052,"Pingpong 2, workbook",-1
+Book,007113610X,Anesthesia for Surgery of the Spine,-1
+Book,9589181694,Diagnostico y Manejo Integral del Paciente Con Epoc Enfermedad Pulmonar Obstructiva Cronica,-1
+Book,0201472260,Mathematics for the Liberal Arts II,-1
 Book,0967776139,Q&A Pathology,-1
-Book,082885629X,Dictionary of Civil Engineering & Construction Machinery & Equipment   Vol. 1,-1
 Book,0964879468,"Commentaries on Law & Public Policy, 1998 Yearbook (Commentaries on Law & Public Policy)",-1
-Book,0327133872,New Jersey Legal Professional's Handbook,-1
-Book,9500300850,LA Zapatera Prodigiosa (Biblioteca Clasica Y Contemporanea),-1
+Book,1571812415,Austrian History Yearbook 2002 (Austrian History Yearbook),-1
 CE,1567120709,SPELLING CORRECTOR,39367
 CE,6305275149,"Hal Leonard Beginning Bass Guitar 1, Instructional Video, 30 Minutes",69089
 CE,6305275173,"Hal Leonard Beginning Guitar 1, Instructional Video, 30 Minutes",71678
 CE,1567125336,FRANKLIN COMP. KJB-1440 Electronic Holy Bible (King James Version),84976
 DVD,B00005O06G,Aftershock,-1
 DVD,B00005QJJY,Indian Wars,-1
+DVD,B000059TOC,The Drifter,0
+DVD,B00006JBIX,The House Of Morecock,0
+DVD,B00008DDST,"1, 2, 3 Soleils: Taha, Khaled, Faudel",0
 DVD,B00003CX5P,"Star Wars - Episode I, The Phantom Menace (Widescreen Edition)",28
 DVD,B00006CXSS,Band of Brothers,47
 DVD,B00001QEE7,The Little Mermaid (Limited Issue),49
 DVD,B00000JS62,The Wizard of Oz,55
 DVD,B00006HBUJ,"Star Wars - Episode II, Attack of the Clones (Widescreen Edition)",85
-DVD,B00005LC1H,Fawlty Towers - The Complete Collection,85
-DVD,B00000JWVS,Jerry Seinfeld Live on Broadway: I'm Telling You for the Last Time,88
-DVD,B00005O3VC,Monty Python and the Holy Grail (Special Edition),89
-Music,B00000II35,Love Existence,-1
-Music,B0000037O4,"Pussy, King of the Pirates",-1
-Music,B000066HXA,East St Kida Toodleoo,-1
-Music,B000071W2O,Free...,-1
-Music,B00004UV2Y,DJ Kicks: The Black Album,-1
-Music,B00005GWVA,Darker Than Darkness: Style 93,-1
-Music,B000059M54,Phatt Life,-1
+Music,B00005AUTO,Door Door,-1
 Music,B00005O53Z,Misty,-1
+Music,B00005GWVA,Darker Than Darkness: Style 93,-1
 Music,B00004Y6NS,Goodbye Charlie Dog,-1
+Music,B00004UV2Y,DJ Kicks: The Black Album,-1
 Music,B00004ZARY,Big Brad 2000 A.E. the beginning,-1
+Music,B00005N8P8,Cliches,-1
+Music,B000062T9N,Hits of 1992,-1
+Music,B00005HK7K,Love,-1
+Music,B000059M54,Phatt Life,-1
 Software,157264317X,ClickArt Christian Publishing Suite 3,200
 Software,B000001A3A,RINGDISC Wagner: The Ring Disc,327
 Software,0310230691,Zondervan Bible Study Library: Leader's Edition 5.0,1955
@@ -50,6 +50,7 @@ Toy,B000055XW3,The Songs of Britney Spears & Christina Aguilera,31296
 Toy,0963679627,R- Photostory Senior,45241
 Video,1572252146,Colonial Life for Children Vols. 4-9,-1
 Video,B00000F05B,Major Rock,-1
+Video,B00005QBZI,From Soup to Nuts,0
 Video,6300215539,The War of the Worlds,1
 Video,6301627024,Shirley Valentine,2
 Video,B00005T33H,Leslie Sansone - Walk Away the Pounds - Super Fat Burning,6
@@ -57,4 +58,4 @@ Video,6302946387,Robin Hood - Men in Tights,7
 Video,6301729897,Richard Simmons - Sweatin' to the Oldies,8
 Video,6300185788,Howard the Duck,12
 Video,6304015127,Charlotte's Web,14
-Video,6301773586,A Tree Grows in Brooklyn,16
+Video Games,0761542639,PRIMA PUBLISHING Dark Cloud 2 Official Strategy Guide,339

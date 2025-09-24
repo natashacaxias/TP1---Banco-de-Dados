@@ -1,76 +1,70 @@
 -- q1: Top 5 comentários mais úteis e com maior/menor avaliação
 WITH ordenado AS (
   SELECT 
-    a.id_usuario, a.classificacao, a.votos, a.util, a.data,
-    RANK() OVER (ORDER BY a.util DESC, a.classificacao DESC) AS rank_pos,
-    RANK() OVER (ORDER BY a.util DESC, a.classificacao ASC) AS rank_neg
-  FROM Avaliacao a
-  JOIN Produto p ON p.id = a.id_produto
+    a.id_custumer, a.rating, a.votes, a.helpful, a.data,
+    RANK() OVER (ORDER BY a.helpful DESC, a.rating DESC) AS rank_pos,
+    RANK() OVER (ORDER BY a.helpful DESC, a.rating ASC) AS rank_neg
+  FROM Review a
+  JOIN Product p ON p.id = a.id_product
   WHERE p.asin = 'INSIRA_ASIN_AQUI'
 )
-SELECT id_usuario, classificacao, votos, util, data
+SELECT id_custumer, rating, votes, helpful, data
 FROM ordenado
 WHERE rank_pos <= 5 OR rank_neg <= 5
-ORDER BY util DESC, classificacao DESC;
-
+ORDER BY helpful DESC, rating DESC;
 
 -- q2: Produtos similares com melhor ranking de vendas
-SELECT ps.asin_similar, p2.titulo, p2.ranking_vendas
-FROM Produto_Similar ps
-JOIN Produto p1 ON p1.id = ps.id_produto
-JOIN Produto p2 ON p2.asin = ps.asin_similar
+SELECT ps.asin_similar, p2.title, p2.salesrank
+FROM Product_Similar ps
+JOIN Product p1 ON p1.id = ps.id_product
+JOIN Product p2 ON p2.asin = ps.asin_similar
 WHERE p1.asin = 'INSIRA_ASIN_AQUI'
-  AND p2.ranking_vendas < p1.ranking_vendas
-ORDER BY p2.ranking_vendas ASC;
-
+  AND p2.salesrank < p1.salesrank
+ORDER BY p2.salesrank ASC;
 
 -- q3: Evolução diária das médias de avaliação
-SELECT a.data, AVG(a.classificacao) AS media_diaria
-FROM Avaliacao a
-JOIN Produto p ON p.id = a.id_produto
+SELECT a.data, AVG(a.rating) AS media_diaria
+FROM Review a
+JOIN Product p ON p.id = a.id_product
 WHERE p.asin = 'INSIRA_ASIN_AQUI'
 GROUP BY a.data
 ORDER BY a.data;
 
-
 -- q4: Top 10 produtos líderes de venda por grupo
-SELECT grupo, asin, titulo, ranking_vendas
+SELECT grupo, asin, title, salesrank
 FROM (
   SELECT p.*,
-         ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY ranking_vendas ASC) AS pos
-  FROM Produto p
-  WHERE ranking_vendas IS NOT NULL
+         ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY salesrank ASC) AS pos
+  FROM Product p
+  WHERE salesrank IS NOT NULL
 ) sub
 WHERE pos <= 10
 ORDER BY grupo, pos;
 
-
 -- q5: Top 10 produtos com maior média de avaliações úteis positivas
-SELECT p.asin, p.titulo,
-       AVG(a.util::float / NULLIF(a.votos, 0)) AS media_util
-FROM Avaliacao a
-JOIN Produto p ON p.id = a.id_produto
-GROUP BY p.asin, p.titulo
+SELECT p.asin, p.title,
+       AVG(a.helpful::float / NULLIF(a.votes, 0)) AS media_util
+FROM Review a
+JOIN Product p ON p.id = a.id_product
+GROUP BY p.asin, p.title
 ORDER BY media_util DESC NULLS LAST
 LIMIT 10;
 
-
 -- q6: Top 5 categorias com maior média de avaliações úteis por produto
 SELECT c.nome,
-       AVG(a.util::float / NULLIF(a.votos, 0)) AS media_util
-FROM Avaliacao a
-JOIN Produto p ON p.id = a.id_produto
-JOIN Categoria_Produto cp ON cp.id_produto = p.id
-JOIN Categoria c ON c.id = cp.id_categoria
+       AVG(a.helpful::float / NULLIF(a.votes, 0)) AS media_util
+FROM Review a
+JOIN Product p ON p.id = a.id_product
+JOIN Category_Product cp ON cp.id_product = p.id
+JOIN Category c ON c.id = cp.id_category
 GROUP BY c.nome
 ORDER BY media_util DESC NULLS LAST
 LIMIT 5;
 
-
 -- q7: Top 10 clientes que mais comentaram por grupo de produto
-SELECT a.id_usuario, p.grupo, COUNT(*) AS total_comentarios
-FROM Avaliacao a
-JOIN Produto p ON p.id = a.id_produto
-GROUP BY a.id_usuario, p.grupo
+SELECT a.id_custumer, p.grupo, COUNT(*) AS total_comentarios
+FROM Review a
+JOIN Product p ON p.id = a.id_product
+GROUP BY a.id_custumer, p.grupo
 ORDER BY total_comentarios DESC
 LIMIT 10;

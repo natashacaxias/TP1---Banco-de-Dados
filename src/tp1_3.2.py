@@ -1,222 +1,66 @@
-import gzip
-import psycopg2
-import argparse
+import re, psycopg2, gzip,argparse, time
 from pathlib import Path
 from psycopg2 import sql
 from psycopg2.extras import execute_values
 
+# Constantes e expressões regulares
 BASE_DIR = Path(__file__).parent.parent
+pattern_info = re.compile(r'\s*([^:]+):\s*(.*)').match
+extract_asins = re.compile(r'\b(\w{10})\b').findall
+regex_categorias = re.compile(r"\|([^\n|]+?)\s*\[(\d+)\]")
+extract_total_reviews = re.compile(r'\s*downloaded:\s*(\d+)').search
+check_discontinued = re.compile(r'^\s*discontinued product\s*$').match
+batch_size = 2000
+product_count = 0
+product_total = 0
 
-categorias_pai = {}
-similares = set()
+current_product = {
+    'id': None,
+    'asin': None,
+    'title': None,
+    'grupo': None,
+    'salesrank': None,
+    'ativo': True,
+}
 
-def conectar_postgree(args):
-    DB_CONFIG = {
-        'host': args.db_host,
-        'port': args.db_port,
-        'database': args.db_name,
-        'user': args.db_user,
-        'password': args.db_pass,
-    }
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        print("Banco de Dados conectado com sucesso!")
-        return conn
-    except Exception as e:
-        print(f"Erro ao conectar ao BD: {e}")
-        exit(1)
+# Batches globais para inserção em lote
+produtos_batch = []
+reviews_batch = []
+categoria_batch = set()
+categoria_produto_batch = set()
+similares_all = set()
+categoria_pai = {}
 
+def inserir_batch():
 
-def criar_banco_dados(conn):
-    conn.autocommit = True
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM pg_database WHERE datname = 'ecommerce'")
-    if cursor.fetchone():
-        print("O banco de dados ecommerce já existe!")
-        return False
-    cursor.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier("ecommerce")))
-    print("Banco de dados ecommerce criado com sucesso!")
-    cursor.close()
-    return True
+    global product_count, product_total
 
-
-def criar_tabelas(conn, esquema):
-    with open(esquema, 'r') as es:
-        cur = conn.cursor()
-        cur.execute(es.read())
-        conn.commit()
-
-
-def parse_insere(conn, metaPath, batch_size=1000):
-    cur = conn.cursor()
-    produtos_batch = []
-    reviews_batch = []
-    categoria_batch = []
-    categoria_produto_batch = []
-
-    with gzip.open(metaPath, 'rt', encoding='utf-8', errors='replace') as meta:
-        buffer = []
-        for line in meta:
-            if line.startswith("# Full") or line.startswith("Total"):
-                continue
-            if line.strip() == "":
-                if buffer:
-                    processa_produto(buffer, produtos_batch, reviews_batch, categoria_batch, categoria_produto_batch)
-                    buffer = []
-
-                    # Inserção em lote
-                    if len(produtos_batch) >= batch_size:
-                        insere_lotes(cur, produtos_batch, reviews_batch, categoria_batch, categoria_produto_batch)
-                        produtos_batch.clear()
-                        reviews_batch.clear()
-                        categoria_batch.clear()
-                        categoria_produto_batch.clear()
-            else:
-                buffer.append(line)
-        if buffer:
-            processa_produto(buffer, produtos_batch, reviews_batch, categoria_batch, categoria_produto_batch)
-            insere_lotes(cur, produtos_batch, reviews_batch, categoria_batch, categoria_produto_batch)
-
-    conn.commit()
-
-
-def processa_produto(linhas, produtos_batch, reviews_batch, categoria_batch,categoria_produto_batch):
-    atributos = {}
-    l = linhas
-    
-    # id
-    atributos["id"] = int(l[0].split()[1])
-
-    # asin
-    atributos["asin"] = l[1].split()[1]
-
-    # title ou descontinuado
-    if l[2].strip() == "discontinued product":
-        atributos["ativo"] = False
-        produtos_batch.append((atributos["id"], atributos["asin"], False, None, None, False))
-        return
-    else:
-        atributos["ativo"] = True
-        atributos["title"] = l[2].split(":", 1)[1].strip()[:255]
-
-    # group
-    atributos["group"] = l[3].split()[1][:255]
-
-    # salesrank
-    atributos["salesrank"] = int(l[4].split()[1])
-
-    # similares
-    tokens = l[5].split()
-    n_similares = int(tokens[1])
-    for s in tokens[2:2+n_similares]:
-        similares.add((atributos["id"], s))
-
-    # categorias
-    qtd_categorias = int(l[6].split()[1])
-    c_aux = set()
-    for i in range(7, 7+qtd_categorias):
-        partes = l[i].strip().split("|")[1:]
-        prev_cid = -1
-        for j, cat in enumerate(partes):
-            o = cat.split("[")
-            if len(o)!=2:
-                continue
-            nome, cid = o
-            cid = int(cid[:-1])
-            categoria_batch.append((nome[:255],cid))
-            if j != 0:
-                categorias_pai[cid] = prev_cid
-            c_aux.add(cid)
-            prev_cid = cid
-    atributos["categorias"] = c_aux
-
-    # reviews
-    aux_i = 7+qtd_categorias
-    k = l[aux_i]
-    aux = list(" ".join(k.split()).split())
-    qtd_reviews = int(aux[2])
-    downloaded = int(aux[4])
-    avg_rating = float(aux[7])
-    atributos_reviews = {}
-
-    aux_i+=1
-    for i in range(aux_i, aux_i+downloaded):
-        aux = l[i].strip().split()
-        reviews_batch.append((
-            atributos["id"], # id_produto
-            aux[0],          # data
-            aux[2],          # customer
-            int(aux[4]),     # rating
-            int(aux[6]),     # votes
-            int(aux[8]),     # helpful
-        ))
-
-    # produtos batch
     produtos_batch.append((
-        atributos["id"],
-        atributos["asin"],
-        atributos["title"],
-        atributos["group"],
-        atributos["salesrank"],
-        True
+        current_product['id'],
+        current_product['asin'],
+        current_product['title'],
+        current_product['grupo'],
+        current_product['salesrank'],
+        current_product['ativo'],
     ))
+    product_count += 1
+    
+    # Inserir lotes quando atingir o batch_size
+    if product_count >= batch_size:
+        insere_lotes(conn)
+        product_total += product_count
+        product_count = 0
+        if product_total % 10000 == 0:
+            print(f"{product_total} produtos processados.")
+    
+    current_product['id'] = None
+    current_product['asin'] = None
+    current_product['title'] = None
+    current_product['grupo'] = None
+    current_product['salesrank'] = None
+    current_product['ativo'] = True
 
-    # categoria_produto batch
-    for cid in c_aux:
-        categoria_produto_batch.append((atributos["id"], cid))
-
-
-def insere_lotes(cur, produtos_batch, reviews_batch, categoria_batch, categoria_produto_batch):
-    try:
-        if produtos_batch:
-            execute_values(cur,
-            """INSERT INTO Produto (id, asin, titulo, grupo, ranking_vendas, ativo)
-            VALUES %s ON CONFLICT(asin) DO NOTHING""", produtos_batch)
-    except psycopg2.errors.StringDataRightTruncation:
-        print(produtos_batch)
-    if reviews_batch:
-        execute_values(cur,
-            """INSERT INTO Avaliacao (id_produto, data, id_usuario, classificacao, votos, util)
-            SELECT r.id_produto, r.data::DATE, r.id_usuario, r.classificacao::BIGINT, r.votos::BIGINT, r.util::BIGINT
-            FROM (VALUES %s) AS r(id_produto, data, id_usuario, classificacao, votos, util)
-            WHERE EXISTS (SELECT 1 FROM Produto p WHERE p.id = r.id_produto)""", reviews_batch)
-    if categoria_batch:
-        execute_values(cur,
-            """INSERT INTO Categoria (nome, id)
-               VALUES %s ON CONFLICT DO NOTHING""", categoria_batch)
-    if categoria_produto_batch:
-        execute_values(cur,
-            """INSERT INTO Categoria_Produto (id_produto, id_categoria)
-               VALUES %s ON CONFLICT DO NOTHING""", categoria_produto_batch)
-
-def inserir_similares(conn):
-    cur = conn.cursor()
-    if similares:
-        execute_values(cur,
-            """INSERT INTO Produto_Similar (id_produto, asin_similar)
-            SELECT s.id_produto, s.asin_similar
-            FROM (VALUES %s) AS s(id_produto, asin_similar)
-            WHERE EXISTS (SELECT 1 FROM Produto p1 WHERE p1.id = s.id_produto)
-              AND EXISTS (SELECT 1 FROM Produto p2 WHERE p2.asin = s.asin_similar)
-            ON CONFLICT (id_produto, asin_similar) DO NOTHING""", list(similares))
-    conn.commit()
-
-
-def inserir_hierarquia(conn):
-    cur = conn.cursor()
-    if categorias_pai:
-        execute_values(cur,
-            """INSERT INTO Categoria_Hierarquia (id_categoria, id_categoria_pai)
-            SELECT h.id_categoria, h.id_categoria_pai
-            FROM (VALUES %s) AS h(id_categoria, id_categoria_pai)
-            WHERE EXISTS (SELECT 1 FROM Categoria c1 WHERE c1.id = h.id_categoria)
-              AND EXISTS (SELECT 1 FROM Categoria c2 WHERE c2.id = h.id_categoria_pai)
-              AND h.id_categoria != h.id_categoria_pai
-            ON CONFLICT (id_categoria, id_categoria_pai) DO NOTHING""", list(categorias_pai.items()))
-    conn.commit()
-
-
-def get_args():
+def get_argumentos():
     parser = argparse.ArgumentParser(description='Processar dados do Amazon Meta')
     parser.add_argument('--db-host', required=True)
     parser.add_argument('--db-port', required=True)
@@ -227,18 +71,170 @@ def get_args():
     return parser.parse_args()
 
 
-def main():
-    args = get_args()
-    conn = conectar_postgree(args)
-    criar_banco_dados(conn)
-    criar_tabelas(conn, BASE_DIR / "sql" / "schema.sql")
+def conectar_postgree(args, database=None):
+    DB_CONFIG = {
+        'host': args.db_host,
+        'port': args.db_port,
+        'database': database if database else args.db_name,
+        'user': args.db_user,
+        'password': args.db_pass,
+    }
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        print(f"Banco de Dados conectado com sucesso! (Database: {DB_CONFIG['database']})")
+        return conn
+    except Exception as e:
+        print(f"Erro ao conectar ao BD: {e}")
+        exit(1)
 
-    print("Executando o parsing e inserindo dados no banco...")
-    parse_insere(conn, args.snap_input)
-    inserir_similares(conn)
-    inserir_hierarquia(conn)
-    print("Concluído!")
+
+def criar_banco_dados(conn, nome):
+    conn.autocommit = True
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", (nome,))
+    if cursor.fetchone():
+        print(f"O banco de dados {nome} já existe!")
+        return True
+    cursor.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(nome)))
+    print(f"Banco de dados {nome} criado com sucesso!")
+    cursor.close()
+    return True
+
+def criar_tabelas(conn, esquema):
+    with open(esquema, 'r') as es:
+        cur = conn.cursor()
+        cur.execute(es.read())
+        conn.commit()
+
+def insere_lotes(conn):
+    cur = conn.cursor()
+
+    if produtos_batch:
+        execute_values(cur,"""INSERT INTO Product (id, asin, title, grupo, salesrank, active) VALUES %s""", produtos_batch)
+    if categoria_batch:
+        execute_values(cur,"""INSERT INTO Category (id, nome) VALUES %s ON CONFLICT DO NOTHING""", list(categoria_batch))
+    if categoria_produto_batch:
+        execute_values(cur,"""INSERT INTO Category_Product (id_Product, id_Category) VALUES %s""", list(categoria_produto_batch))
+    if reviews_batch:
+        execute_values(cur,"""INSERT INTO Review (id_Product, data, id_custumer, rating, votes, helpful) VALUES %s""", reviews_batch)
+        
+    conn.commit()
+
+    produtos_batch.clear()
+    reviews_batch.clear()
+    categoria_batch.clear()
+    categoria_produto_batch.clear()
+
+def parse_insere(conn, path):
+
+    with gzip.open(path, 'rt', encoding='utf-8', errors='replace') as file:
+        
+        while True:
+            
+            linha = file.readline()
+            
+            # Sair se chegou ao final do arquivo
+            if linha == "": break 
+
+            match = pattern_info(linha)
+            if match: 
+                pass
+            elif check_discontinued(linha):
+                current_product['ativo'] = False
+                inserir_batch()
+                continue
+            else: continue
+            
+            key = match.group(1)
+            value = match.group(2)
+            if key == "Id":
+                current_product['id'] = int(value)
+            elif key == "ASIN":
+                current_product['asin'] = value
+            elif key == "title":
+                current_product['title'] = value
+                current_product['ativo'] = True
+            elif key == "group":
+                current_product['grupo'] = value
+            elif key == "salesrank":
+                current_product['salesrank'] = int(value)
+            elif key == "similar":
+                similares = extract_asins(value)
+                for s in similares:
+                    similares_all.add((current_product['id'], s))
+            elif key == "categories":
+                for x in range(int(value)):
+                    categorias_line = file.readline()
+                    categorias = re.findall(regex_categorias, categorias_line)
+                    categorias = [(int(idd), nome) for nome, idd in categorias]
+                    for i in range(len(categorias)):
+                        if i != 0:  # hierarquia
+                            categoria_pai[int(categorias[i][0])] = int(categorias[i-1][0])
+                        categoria_batch.add(categorias[i])
+                        categoria_produto_batch.add((current_product['id'], categorias[i][0]))
+
+            elif key == "reviews":
+                total_reviews = extract_total_reviews(value)
+                if total_reviews:
+                    total_reviews = int(total_reviews.group(1))
+                else:
+                    total_reviews = 0
+                for i in range(total_reviews):
+                    line = file.readline()
+                    partes = line.split()
+                    if len(partes) >= 9:
+                        data = partes[0]
+                        id_custumer = partes[2]
+                        rating = int(partes[4])
+                        votes = int(partes[6])
+                        helpful = int(partes[8])
+                        reviews_batch.append((current_product['id'], data, id_custumer, rating, votes, helpful))
+                inserir_batch()
+
+                    
+        # Inserir registros restantes
+        global product_total, product_count
+        insere_lotes(conn)
+        product_total += product_count
+        print(f"{product_total} produtos processados.")
+
+    cur = conn.cursor()
+
+    # Product_Similar e Category_hierarchy tratados separadamente para não violar restrições
+    print("\nProcessando Similares e Hierarquia de Categorias...")
+    if similares_all:
+        execute_values(cur, 
+            """INSERT INTO Product_Similar (id_Product, asin_similar)
+            SELECT s.id_Product, s.asin_similar
+            FROM (VALUES %s) AS s(id_Product, asin_similar)
+            WHERE EXISTS (SELECT 1 FROM Product p1 WHERE p1.id = s.id_Product)
+              AND EXISTS (SELECT 1 FROM Product p2 WHERE p2.asin = s.asin_similar)
+            ON CONFLICT (id_Product, asin_similar) DO NOTHING""", 
+            list(similares_all))
+
+    if categoria_pai:
+        execute_values(cur, 
+            """INSERT INTO Category_hierarchy (id_Category, id_Category_pai) 
+            VALUES %s ON CONFLICT DO NOTHING""", 
+            [(cat_id, parent_id) for cat_id, parent_id in categoria_pai.items()])
+
+    conn.commit()  # Commit explícito após as inserções finais
 
 
 if __name__ == "__main__":
-    main()
+    args = get_argumentos()
+    
+    conn = conectar_postgree(args, database="postgres")
+    criar_banco_dados(conn, args.db_name)
+    conn.close()
+    
+    conn = conectar_postgree(args, database=args.db_name)
+    criar_tabelas(conn, BASE_DIR / "sql" / "schema.sql")
+
+    print("Executando o parsing e inserindo dados no banco...")
+    inicio = time.perf_counter()
+    parse_insere(conn, args.snap_input)
+    fim = time.perf_counter()
+    print(f"Tempo total de execução: {((fim - inicio)/60):.2f} minutos")
+    print("Concluído!")
+    conn.close()
