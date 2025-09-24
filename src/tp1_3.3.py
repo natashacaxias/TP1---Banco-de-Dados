@@ -1,14 +1,12 @@
 import psycopg2, argparse
 from pathlib import Path
-from psycopg2 import sql
 import pandas as pd
-from psycopg2.extras import DictCursor  # Adicionar esta importação
-
+from psycopg2.extras import DictCursor
+from sys import stdout
 
 BASE_DIR = Path(__file__).parent.parent
 
 def conectar_postgree():
-
     parser = argparse.ArgumentParser(description='Processar dados do Amazon Meta')
     parser.add_argument('--db-host', required=True, help='Host do PostgreSQL')
     parser.add_argument('--db-port', required=True, help='Porta do PostgreSQL')
@@ -29,10 +27,10 @@ def conectar_postgree():
 
     try:
         conn = psycopg2.connect(**DB_CONFIG)
-        print("Banco de Dados conectado com sucesso!")
+        stdout.write("Banco de Dados conectado com sucesso!\n")
         return conn
     except Exception as e:
-        print(f"Erro ao conectar ao BD: {e}")
+        stdout.write(f"Erro ao conectar ao BD: {e}\n")
         exit(1)
 
 def executar_consultas(conn, consultas):
@@ -44,40 +42,77 @@ def executar_consultas(conn, consultas):
                 continue
                 
             aux = l.strip().split("\n")[0]
-            print(aux)
+            stdout.write(aux + "\n")
             nome_arquivo = f"{aux.split()[1][:-1]}.csv"
             
-            # Usar cursor com DictCursor para melhor formatação
-            with conn.cursor(cursor_factory=DictCursor) as cur:
+            # Usar cursor para executar a consulta
+            with conn.cursor() as cur:
+                # Executar a consulta
                 cur.execute(l)
+                
+                # Obter os resultados
                 resultados = cur.fetchall()
                 
-                # Converter para DataFrame
+                # Obter os nomes das colunas
                 colunas = [desc[0] for desc in cur.description]
-                df = pd.DataFrame(resultados, columns=colunas)
-            
-            df.to_csv(BASE_DIR / "out" / nome_arquivo, index=False, encoding="utf-8")
-
-            print(f"═" * 60)
-            print(f"CONSULTA: {nome_arquivo[:-4]}")
-            print(f"Arquivo salvo: {nome_arquivo}")
-            print(f"Total de registros: {len(df)}")
-            print(f"═" * 60)
-            
-            # Mostrar resultados de forma mais organizada
-            if len(df) > 0:
-                print(df.to_string(index=False))
-            else:
-                print("Nenhum resultado encontrado")
                 
-            print(f"\n")
+                # Converter para DataFrame para salvar em CSV
+                df = pd.DataFrame(resultados, columns=colunas)
+                df.to_csv(BASE_DIR / "out" / nome_arquivo, index=False, encoding="utf-8")
+                
+                # Formatar a saída de forma bonita, igual ao PostgreSQL
+                stdout.write(("-" * 133) + "\n")
+                stdout.write(f"CONSULTA: {nome_arquivo[:-4]}\n")
+                stdout.write(f"Arquivo salvo: {nome_arquivo}\n")
+                stdout.write(f"Total de registros: {len(df)}\n")
+                stdout.write(("-" * 133) + "\n")
+                
+                if len(df) > 0:
+                    # Calcular a largura de cada coluna
+                    larguras = []
+                    for i, coluna in enumerate(colunas):
+                        # Largura mínima é o nome da coluna
+                        largura = len(coluna)
+                        # Verificar o maior valor na coluna
+                        for linha in resultados:
+                            valor = str(linha[i]) if linha[i] is not None else ""
+                            largura = max(largura, len(valor))
+                        larguras.append(largura)
+                    
+                    # Criar a linha de cabeçalho
+                    cabecalho = ""
+                    for i, coluna in enumerate(colunas):
+                        cabecalho += f" {coluna:<{larguras[i]}} |"
+                    cabecalho = cabecalho[:-1]  # Remover o último |
+                    
+                    # Criar a linha separadora
+                    separador = ""
+                    for largura in larguras:
+                        separador += "-" * (largura + 2) + "+"
+                    separador = separador[:-1]  # Remover o último +
+                    
+                    # Imprimir cabeçalho
+                    stdout.write(cabecalho + "\n")
+                    stdout.write(separador + "\n")
+                    
+                    # Imprimir cada linha
+                    for linha in resultados:
+                        linha_str = ""
+                        for i, valor in enumerate(linha):
+                            valor_str = str(valor) if valor is not None else ""
+                            linha_str += f" {valor_str:<{larguras[i]}} |"
+                        linha_str = linha_str[:-1]  # Remover o último |
+                        stdout.write(linha_str + "\n")
+                    
+                    # Adicionar contagem de linhas
+                    stdout.write(f"({len(df)} rows)\n\n")
+                else:
+                    stdout.write("Nenhum resultado encontrado\n\n")
 
 def main():
-
     CONN = conectar_postgree()
     executar_consultas(CONN, BASE_DIR / "sql" / "queries.sql")
-
-    print("Concluído")
+    stdout.write("Concluído\n")
 
 if __name__ == "__main__":
     main()

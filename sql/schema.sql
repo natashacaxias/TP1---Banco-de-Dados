@@ -56,24 +56,21 @@ CREATE TABLE IF NOT EXISTS Category_Product (
     CONSTRAINT par_unico_Category UNIQUE (id_Product, id_Category) -- Evita repetições de pares
 );
 
--- Índices para Product
+-- Índices para otimização das consultas de tp1_3.3.py
+
+-- Product
 CREATE INDEX IF NOT EXISTS idx_Product_asin ON Product(asin);
 CREATE INDEX IF NOT EXISTS idx_Product_group ON Product(grupo);
 CREATE INDEX IF NOT EXISTS idx_Product_ranking ON Product(salesrank);
-CREATE INDEX IF NOT EXISTS idx_Product_active ON Product(active);
 
--- Índices para Review
+-- Review
 CREATE INDEX IF NOT EXISTS idx_Review_Product ON Review(id_Product);
 CREATE INDEX IF NOT EXISTS idx_Review_data ON Review(data);
 CREATE INDEX IF NOT EXISTS idx_Review_rating ON Review(rating);
-CREATE INDEX IF NOT EXISTS idx_Review_usuario ON Review(id_custumer);
+CREATE INDEX IF NOT EXISTS idx_Review_customer_group ON Review(id_custumer, id_Product);
 
--- Índices para Category_Product
-CREATE INDEX IF NOT EXISTS idx_Category_Product_Category ON Category_Product(id_Category);
+-- Category_Product
 CREATE INDEX IF NOT EXISTS idx_Category_Product_Product ON Category_Product(id_Product);
 
--- Índices para Product_Similar
+-- Product_Similar
 CREATE INDEX IF NOT EXISTS idx_similar_asin ON Product_Similar(asin_similar);
-
--- Índices para Category_Hierarquia
-CREATE INDEX IF NOT EXISTS idx_hierarquia_pai ON Category_hierarchy(id_Category_pai);
