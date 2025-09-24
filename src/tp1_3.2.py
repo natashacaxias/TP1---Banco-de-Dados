@@ -8,7 +8,8 @@ BASE_DIR = Path(__file__).parent.parent
 pattern_info = re.compile(r'\s*([^:]+):\s*(.*)').match
 extract_asins = re.compile(r'\b(\w{10})\b').findall
 regex_categorias = re.compile(r"\|([^\n|]+?)\s*\[(\d+)\]")
-extract_total_reviews = re.compile(r'\s*downloaded:\s*(\d+)').search
+extract_downloaded_reviews = re.compile(r'\s*downloaded:\s*(\d+)').search
+extract_total_reviews = re.compile(r'\s*total:\s*(\d+)').search
 check_discontinued = re.compile(r'^\s*discontinued product\s*$').match
 batch_size = 2000
 product_count = 0
@@ -174,12 +175,13 @@ def parse_insere(conn, path):
                         categoria_produto_batch.add((current_product['id'], categorias[i][0]))
 
             elif key == "reviews":
-                total_reviews = extract_total_reviews(value)
-                if total_reviews:
-                    total_reviews = int(total_reviews.group(1))
+                down_reviews = extract_downloaded_reviews(value)
+                current_product['total_reviews'] = extract_total_reviews(value)
+                if down_reviews:
+                    down_reviews = int(down_reviews.group(1))
                 else:
-                    total_reviews = 0
-                for i in range(total_reviews):
+                    down_reviews = 0
+                for i in range(down_reviews):
                     line = file.readline()
                     partes = line.split()
                     if len(partes) >= 9:
