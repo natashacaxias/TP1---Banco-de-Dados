@@ -5,4 +5,5 @@ O arquivo `amazon-meta.txt.z` pode ser baixado diretamente do site oficial do SN
 https://snap.stanford.edu/data/amazon-meta.html
 
 Depois de baixar, coloque-o nesta pasta com o nome `amazon-meta.txt.gz`.
+
 ATENÇÃO: Não descompactar!
