@@ -56,6 +56,14 @@ CREATE TABLE IF NOT EXISTS Category_Product (
     CONSTRAINT par_unico_Category UNIQUE (id_Product, id_Category) -- Evita repetições de pares
 );
 
+CREATE VIEW total_avg_reviews AS
+SELECT 
+    id_product,
+    AVG(rating) AS avg_rating,
+    COUNT(*) AS total_reviews 
+FROM Review
+GROUP BY id_Product;
+
 -- Índices para otimização das consultas de tp1_3.3.py
 
 -- Product
