@@ -3,17 +3,19 @@ from pathlib import Path
 from psycopg2 import sql
 from psycopg2.extras import execute_values
 
-# Constantes e expressões regulares
+# Constantes
 BASE_DIR = Path(__file__).parent.parent
+batch_size = 2000
+product_count = 0
+product_total = 0
+
+# Expressões Regulares
 pattern_info = re.compile(r'\s*([^:]+):\s*(.*)').match
 extract_asins = re.compile(r'\b(\w{10})\b').findall
 regex_categorias = re.compile(r"\|([^\n|]+?)\s*\[(\d+)\]")
 extract_downloaded_reviews = re.compile(r'\s*downloaded:\s*(\d+)').search
 extract_total_reviews = re.compile(r'\s*total:\s*(\d+)').search
 check_discontinued = re.compile(r'^\s*discontinued product\s*$').match
-batch_size = 2000
-product_count = 0
-product_total = 0
 
 current_product = {
     'id': None,
@@ -68,7 +70,7 @@ def get_argumentos():
     parser.add_argument('--db-name', required=True)
     parser.add_argument('--db-user', required=True)
     parser.add_argument('--db-pass', required=True)
-    parser.add_argument('--snap-input', required=True)
+    parser.add_argument('--input', required=True)
     return parser.parse_args()
 
 
@@ -82,10 +84,9 @@ def conectar_postgree(args, database=None):
     }
     try:
         conn = psycopg2.connect(**DB_CONFIG)
-        print(f"Banco de Dados conectado com sucesso! (Database: {DB_CONFIG['database']})")
         return conn
     except Exception as e:
-        print(f"Erro ao conectar ao BD: {e}")
+        print(f"Erro ao conectar ao Postgree: {e}")
         exit(1)
 
 
@@ -94,10 +95,10 @@ def criar_banco_dados(conn, nome):
     cursor = conn.cursor()
     cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", (nome,))
     if cursor.fetchone():
-        print(f"O banco de dados {nome} já existe!")
+        print(f"\nO banco de dados {nome} já existe!")
         return True
     cursor.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(nome)))
-    print(f"Banco de dados {nome} criado com sucesso!")
+    print(f"\nBanco de dados {nome} criado com sucesso!")
     cursor.close()
     return True
 
@@ -106,6 +107,7 @@ def criar_tabelas(conn, esquema):
         cur = conn.cursor()
         cur.execute(es.read())
         conn.commit()
+    print("Tabelas criadas com sucesso!")
 
 def insere_lotes(conn):
     cur = conn.cursor()
@@ -127,6 +129,7 @@ def insere_lotes(conn):
     categoria_produto_batch.clear()
 
 def parse_insere(conn, path):
+    print("\nExecutando o parsing e inserindo dados no banco...")
 
     with gzip.open(path, 'rt', encoding='utf-8', errors='replace') as file:
         
@@ -203,7 +206,6 @@ def parse_insere(conn, path):
     cur = conn.cursor()
 
     # Product_Similar e Category_hierarchy tratados separadamente para não violar restrições
-    print("\nProcessando Similares e Hierarquia de Categorias...")
     if similares_all:
         execute_values(cur, 
             """INSERT INTO Product_Similar (id_Product, asin_similar)
@@ -230,13 +232,12 @@ if __name__ == "__main__":
     criar_banco_dados(conn, args.db_name)
     conn.close()
     
-    conn = conectar_postgree(args, database=args.db_name)
+    conn = conectar_postgree(args)
     criar_tabelas(conn, BASE_DIR / "sql" / "schema.sql")
 
-    print("Executando o parsing e inserindo dados no banco...")
     inicio = time.perf_counter()
-    parse_insere(conn, args.snap_input)
+    parse_insere(conn, args.input)
     fim = time.perf_counter()
-    print(f"Tempo total de execução: {((fim - inicio)/60):.2f} minutos")
-    print("Concluído!")
+    print("\nConcluído!")
+    print(f"Tempo de execução: {((fim - inicio)/60):.2f} minutos\n")
     conn.close()

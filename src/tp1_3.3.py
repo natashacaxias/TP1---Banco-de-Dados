@@ -1,21 +1,23 @@
 import psycopg2, argparse
 from pathlib import Path
 import pandas as pd
-from psycopg2.extras import DictCursor
 from sys import stdout
 
 BASE_DIR = Path(__file__).parent.parent
 
-def conectar_postgree():
+def get_argumentos():
     parser = argparse.ArgumentParser(description='Processar dados do Amazon Meta')
-    parser.add_argument('--db-host', required=True, help='Host do PostgreSQL')
-    parser.add_argument('--db-port', required=True, help='Porta do PostgreSQL')
-    parser.add_argument('--db-name', required=True, help='Nome do banco de dados')
-    parser.add_argument('--db-user', required=True, help='Usuário do PostgreSQL')
-    parser.add_argument('--db-pass', required=True, help='Senha do PostgreSQL')
-    
-    args = parser.parse_args()
+    parser.add_argument('--db-host', required=True)
+    parser.add_argument('--db-port', required=True)
+    parser.add_argument('--db-name', required=True)
+    parser.add_argument('--db-user', required=True)
+    parser.add_argument('--db-pass', required=True)
+    parser.add_argument('--product-asin', required=True)
+    return parser.parse_args()
 
+
+def conectar_postgree(args):
+    
     # Configuração do PostgreSQL
     DB_CONFIG = {
         'host': args.db_host,
@@ -33,7 +35,9 @@ def conectar_postgree():
         stdout.write(f"Erro ao conectar ao BD: {e}\n")
         exit(1)
 
-def executar_consultas(conn, consultas):
+def executar_consultas(conn, asin, consultas):
+    stdout.write("\nDASHBOARD | Consultas SQL\n")
+
     with open(consultas, 'r') as c:
         linhas = c.read().split(";")
         
@@ -42,13 +46,13 @@ def executar_consultas(conn, consultas):
                 continue
                 
             aux = l.strip().split("\n")[0]
-            stdout.write(aux + "\n")
+            stdout.write("\n"+ aux + "\n")
             nome_arquivo = f"{aux.split()[1][:-1]}.csv"
             
             # Usar cursor para executar a consulta
             with conn.cursor() as cur:
                 # Executar a consulta
-                cur.execute(l)
+                cur.execute(l, (asin,))
                 
                 # Obter os resultados
                 resultados = cur.fetchall()
@@ -60,7 +64,7 @@ def executar_consultas(conn, consultas):
                 df = pd.DataFrame(resultados, columns=colunas)
                 df.to_csv(BASE_DIR / "out" / nome_arquivo, index=False, encoding="utf-8")
                 
-                # Formatar a saída de forma bonita, igual ao PostgreSQL
+                # Formatar a saída
                 stdout.write(("-" * 133) + "\n")
                 stdout.write(f"Arquivo salvo: {nome_arquivo}\n")
                 stdout.write(f"Total de registros: {len(df)}\n")
@@ -109,8 +113,9 @@ def executar_consultas(conn, consultas):
                     stdout.write("Nenhum resultado encontrado\n\n")
 
 def main():
-    CONN = conectar_postgree()
-    executar_consultas(CONN, BASE_DIR / "sql" / "queries.sql")
+    args = get_argumentos()
+    CONN = conectar_postgree(args)
+    executar_consultas(CONN, args.product_asin ,BASE_DIR / "sql" / "queries.sql")
     stdout.write("Concluído\n")
 
 if __name__ == "__main__":
