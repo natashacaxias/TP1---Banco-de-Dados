@@ -1,8 +1,8 @@
 # TP1 – Banco de Dados (2025/02)
 
-Trabalho Prático I da disciplina **Introdução a Bancos de Dados** – Universidade Federal do Amazonas (UFAM) – Instituto de Computação.  
-
 Alunos: Abel Severo Rocha, Ana Carla de Araujo Fernandes, Natasha Araujo Caxias
+
+Trabalho Prático I da disciplina **Introdução a Bancos de Dados** – Universidade Federal do Amazonas (UFAM) – Instituto de Computação. 
 
 O objetivo é projetar e implementar um banco de dados relacional sobre produtos vendidos em uma loja de comércio eletrônico, utilizando dados do **Amazon product co-purchasing network metadata (SNAP)**.  
 
@@ -34,7 +34,8 @@ TP1---Banco-de-Dados/
 └── README.md # Este arquivo
 ```
 
-## Como executar
+## Como executar 
+(Atenção: Carregar o arquivo)
 
 ### Usando `Makefile` (recomendado)
 
@@ -58,4 +59,5 @@ TP1---Banco-de-Dados/
 
 #### 7) Resetar o ambiente (derrubar + subir de novo)
 `make reset` 
+
 
