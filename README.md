@@ -13,6 +13,7 @@ O projeto inclui:
 
 ## Estrutura do Repositório
 
+```
 TP1---Banco-de-Dados/
 ├── docker-compose.yml # Orquestração dos serviços
 ├── Dockerfile # Build da aplicação Python
@@ -31,6 +32,7 @@ TP1---Banco-de-Dados/
 │ ├── tp1_3.1.pdf # Documentação do esquema
 │ └── esquema.png # Diagrama do BD
 └── README.md # Este arquivo
+```
 
 ## Como executar
 
@@ -56,3 +58,4 @@ TP1---Banco-de-Dados/
 
 #### 7) Resetar o ambiente (derrubar + subir de novo)
 `make reset` 
+
