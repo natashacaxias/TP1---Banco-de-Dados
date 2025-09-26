@@ -53,8 +53,8 @@ def inserir_batch():
         insere_lotes(conn)
         product_total += product_count
         product_count = 0
-        if product_total % 10000 == 0:
-            print(f"{product_total} produtos processados.")
+        # if product_total % 10000 == 0:
+        #     print(f"{product_total} produtos processados.")
     
     current_product['id'] = None
     current_product['asin'] = None

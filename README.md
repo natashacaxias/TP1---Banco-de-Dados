@@ -37,29 +37,33 @@ TP1---Banco-de-Dados/
 
 ## Como executar 
 
-### Usando `Makefile` (recomendado)
+### 1) Construir e subir os serviços
 
-#### Projeto de Ponta a Ponta (subir → carregar → dashboard)
-`make all` 
+``	docker compose up -d --build``
 
-### Usando `Makefile` (Passo a Passo)
-#### 1) Construir e subir os serviços
-`make up` 
+### 2) Conferir saude do PostgreSQL (opcional)
 
-#### 2) Conferir se o banco está saudável
-`make ps` 
+``	docker compose ps``
 
-#### 3) Criar esquema e carregar dados
-`make ps` 
+### 3) Criar esquema e carregar dados
 
-#### 4) Executar o Dashboard (consultas SQL)
-`make dashboard` 
+``	docker compose run --rm app python src/tp1_3.2.py --db-host db --db-port 5432 --db-name ecommerce --db-user postgres --db-pass postgres --input data/amazon-meta.txt.gz
+``
 
-#### 5) Derrubar os serviços (containers + volumes)
-`make down` 
+### 4) Executar o Dashboard (todas as consultas)
+``
+docker compose run --rm app python src/tp1_3.3.py --db-host db --db-port 5432 --db-name ecommerce --db-user postgres --db-pass postgres --product-asin 0738700797
+``
 
-#### 6) Resetar o ambiente (derrubar + subir de novo)
-`make reset` 
+### 5) Derrubar os servicos (containers + volumes)
+``
+	docker compose down -v
+``
+
+
+
+
+
 
 
 
