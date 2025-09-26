@@ -35,8 +35,7 @@ TP1---Banco-de-Dados/
 ```
 
 ## Como executar 
-
-##(Atenção: Carregar o arquivo de entrada no diretório /data)
+**(Atenção: Carregar o arquivo de entrada no diretório /data)**
 
 ### Usando `Makefile` (recomendado)
 
@@ -60,6 +59,7 @@ TP1---Banco-de-Dados/
 
 #### 7) Resetar o ambiente (derrubar + subir de novo)
 `make reset` 
+
 
 
 
