@@ -33,5 +33,8 @@ dashboard:
 down:
 	docker compose down -v
 
-# Atalho para rodar tudo de ponta-a-ponta (up + load + dashboard)
+# 6) Resetar o ambiente (derrubar + subir de novo)
+reset: down up
+
+# 7) Atalho para rodar tudo de ponta-a-ponta (up + load + dashboard)
 all: up load dashboard
