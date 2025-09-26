@@ -39,6 +39,10 @@ TP1---Banco-de-Dados/
 
 ### Usando `Makefile` (recomendado)
 
+#### Projeto de Ponta a Ponta (subir → carregar → dashboard)
+`make all` 
+
+### Usando `Makefile` (Passo a Passo)
 #### 1) Construir e subir os serviços
 `make up` 
 
@@ -54,11 +58,9 @@ TP1---Banco-de-Dados/
 #### 5) Derrubar os serviços (containers + volumes)
 `make down` 
 
-#### 6) Projeto de Ponta a Ponta (subir → carregar → dashboard)
-`make all` 
-
-#### 7) Resetar o ambiente (derrubar + subir de novo)
+#### 6) Resetar o ambiente (derrubar + subir de novo)
 `make reset` 
+
 
 
 
