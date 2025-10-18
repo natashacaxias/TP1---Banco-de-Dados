@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  upload:
+    image: tp2
+    build: .
+    volumes:
+      - ./data:/data
+    command: ["./bin/upload", "/data/input.csv"]
+
+  findrec:
+    image: tp2
+    volumes:
+      - ./data:/data
+    command: ["./bin/findrec", "123"]
